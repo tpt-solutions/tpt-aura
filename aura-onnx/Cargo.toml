@@ -1,0 +1,24 @@
+[package]
+name = "aura-onnx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "ONNX inference backends (YOLOv8/SAM/CLIP) that populate the AURA Semantic DAG."
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+libaura = { path = "../libaura" }
+
+[dependencies.ort]
+version = "2.0.0-rc.13"
+optional = true
+
+[features]
+default = []
+# Real ONNX Runtime backend. Requires network access at build time to fetch the
+# prebuilt ONNX Runtime, plus model weight files (see models/ in .gitignore).
+onnx = ["dep:ort"]

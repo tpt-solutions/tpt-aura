@@ -16,7 +16,7 @@ authors = ["TPT Solutions"]
 description = "Adaptive Universal Record Architecture — a cryptographically sealed, semantically-aware master media format."
 
 [workspace.dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 sha3 = "0.10"
 ed25519-dalek = "2"
 clap = { version = "4", features = ["derive"] }

@@ -19,6 +19,79 @@ pub trait Detector {
     fn detect(&self, img: &RgbImage) -> Result<SemanticDAG, AuraError>;
 }
 
+/// Selectable detector backend.
+///
+/// The matching backend is gated behind a Cargo feature so that only the
+/// runtimes actually needed are compiled in — the "adaptive" part of AURA.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Backend {
+    /// Pure-Rust reference detector (no model weights, always available).
+    Stub,
+    /// ONNX Runtime backend (feature `onnx`).
+    Ort,
+    /// Apple CoreML backend (feature `coreml`).
+    CoreMl,
+    /// NVIDIA TensorRT backend (feature `tensorrt`).
+    TensorRt,
+}
+
+/// Build a detector for the explicitly requested [`Backend`].
+///
+/// Returns [`AuraError::Unsupported`] if the backend's feature is not compiled
+/// in (e.g. `Ort` without `--features aura-onnx/onnx`).
+pub fn detector_for(backend: Backend) -> Result<Box<dyn Detector>, AuraError> {
+    match backend {
+        Backend::Stub => Ok(Box::new(StubDetector)),
+        Backend::Ort => {
+            #[cfg(feature = "onnx")]
+            {
+                // Prefer the canonical weights fetched by `aura fetch-models`.
+                match onnx::OrtDetector::new(
+                    std::path::Path::new("models/yolov8n.onnx"),
+                    Some(std::path::Path::new("models/yolov8n-seg.onnx")),
+                ) {
+                    Ok(d) => return Ok(Box::new(d)),
+                    Err(e) => {
+                        return Err(AuraError::Unsupported(format!(
+                            "failed to load ONNX weights: {e}"
+                        )))
+                    }
+                }
+            }
+            #[cfg(not(feature = "onnx"))]
+            {
+                Err(AuraError::Unsupported(
+                    "ONNX backend requires the `onnx` feature".into(),
+                ))
+            }
+        }
+        Backend::CoreMl => {
+            #[cfg(feature = "coreml")]
+            {
+                Ok(Box::new(coreml::CoreMlDetector))
+            }
+            #[cfg(not(feature = "coreml"))]
+            {
+                Err(AuraError::Unsupported(
+                    "CoreML backend requires the `coreml` feature".into(),
+                ))
+            }
+        }
+        Backend::TensorRt => {
+            #[cfg(feature = "tensorrt")]
+            {
+                Ok(Box::new(tensorrt::TensorRtDetector))
+            }
+            #[cfg(not(feature = "tensorrt"))]
+            {
+                Err(AuraError::Unsupported(
+                    "TensorRT backend requires the `tensorrt` feature".into(),
+                ))
+            }
+        }
+    }
+}
+
 /// Pure-Rust reference detector.
 ///
 /// It segments the frame into a `Sky` (top half) and `Ground` (bottom half)
@@ -65,12 +138,48 @@ impl Detector for StubDetector {
     }
 }
 
-/// Build the default detector (currently the pure-Rust [`StubDetector`]).
+/// Build the default detector, choosing the best *compiled-in* backend.
 ///
-/// With the `onnx` feature enabled this would return an `OrtDetector`; here it
-/// returns the offline-safe stub so the workspace builds and tests without
-/// network access or model weights.
+/// Priority: TensorRT → CoreML → ONNX (if its weights are loadable) → Stub.
+/// This is the "adaptive" part of AURA: a build picks the fastest backend it
+/// was compiled with, and silently falls back to the offline [`StubDetector`]
+/// when no native runtime is available.
+/// Build the default detector, choosing the best *compiled-in* backend.
+///
+/// Priority: TensorRT → CoreML → ONNX (if its weights are loadable) → Stub.
+/// This is the "adaptive" part of AURA: a build picks the fastest backend it
+/// was compiled with, and silently falls back to the offline [`StubDetector`]
+/// when no native runtime is available.
 pub fn default_detector() -> Box<dyn Detector> {
+    select_detector()
+}
+
+/// Disjoint, feature-gated backend selection (exactly one definition compiles
+/// per feature combination), so the priority order is encoded by `cfg` alone.
+#[cfg(feature = "tensorrt")]
+fn select_detector() -> Box<dyn Detector> {
+    Box::new(tensorrt::TensorRtDetector)
+}
+
+#[cfg(all(feature = "coreml", not(feature = "tensorrt")))]
+fn select_detector() -> Box<dyn Detector> {
+    Box::new(coreml::CoreMlDetector)
+}
+
+#[cfg(all(feature = "onnx", not(any(feature = "tensorrt", feature = "coreml"))))]
+fn select_detector() -> Box<dyn Detector> {
+    match onnx::OrtDetector::new(
+        std::path::Path::new("models/yolov8n.onnx"),
+        Some(std::path::Path::new("models/yolov8n-seg.onnx")),
+    ) {
+        Ok(d) => Box::new(d),
+        // Weights missing/unloadable → fall back to the offline stub.
+        Err(_) => Box::new(StubDetector),
+    }
+}
+
+#[cfg(not(any(feature = "tensorrt", feature = "coreml", feature = "onnx")))]
+fn select_detector() -> Box<dyn Detector> {
     Box::new(StubDetector)
 }
 
@@ -79,7 +188,7 @@ pub mod onnx {
     //! Real ONNX Runtime backends (feature `onnx`).
     //!
     //! These require ONNX model files (YOLOv8 for detection, SAM for masks,
-    //! CLIP for label confidence). Construct with [`OrtDetector::new`] pointing
+    //! CLIP for label confidence). Construct with [`onnx::OrtDetector::new`] pointing
     //! at the model paths; inference runs each session and merges the results
     //! into a single [`SemanticDAG`].
 
@@ -88,8 +197,10 @@ pub mod onnx {
 
     /// ONNX Runtime-backed detector.
     pub struct OrtDetector {
+        #[allow(dead_code)]
         yolo: ort::session::Session,
         // SAM and CLIP sessions would be added here in a full build.
+        #[allow(dead_code)]
         clip: Option<ort::session::Session>,
     }
 
@@ -128,6 +239,63 @@ pub mod onnx {
             // weights and a runtime environment.
             Err(AuraError::Unsupported(
                 "ONNX inference requires model weights and a runtime; see `models/`".into(),
+            ))
+        }
+    }
+}
+
+/// Apple CoreML detector backend (scaffold).
+///
+/// Enable with `--features aura-onnx/coreml`. A production build would bridge to
+/// CoreML via the `coremltools`/`coreml-rs` ecosystem; the detector here is a
+/// placeholder that returns [`AuraError::Unsupported`] until that integration
+/// lands, so the feature compiles and is selectable today.
+#[cfg(feature = "coreml")]
+pub mod coreml {
+    use super::Detector;
+    use libaura::error::AuraError;
+    use libaura::neural::RgbImage;
+    use libaura::semantic::SemanticDAG;
+
+    /// Placeholder CoreML-backed detector.
+    pub struct CoreMlDetector;
+
+    impl Detector for CoreMlDetector {
+        fn name(&self) -> &str {
+            "coreml"
+        }
+
+        fn detect(&self, _img: &RgbImage) -> Result<SemanticDAG, AuraError> {
+            Err(AuraError::Unsupported(
+                "CoreML backend is scaffolded; wire up a coreml-rs binding".into(),
+            ))
+        }
+    }
+}
+
+/// NVIDIA TensorRT detector backend (scaffold).
+///
+/// Enable with `--features aura-onnx/tensorrt`. A production build would wrap a
+/// TensorRT engine; the detector here is a placeholder returning
+/// [`AuraError::Unsupported`] so the feature compiles and is selectable today.
+#[cfg(feature = "tensorrt")]
+pub mod tensorrt {
+    use super::Detector;
+    use libaura::error::AuraError;
+    use libaura::neural::RgbImage;
+    use libaura::semantic::SemanticDAG;
+
+    /// Placeholder TensorRT-backed detector.
+    pub struct TensorRtDetector;
+
+    impl Detector for TensorRtDetector {
+        fn name(&self) -> &str {
+            "tensorrt"
+        }
+
+        fn detect(&self, _img: &RgbImage) -> Result<SemanticDAG, AuraError> {
+            Err(AuraError::Unsupported(
+                "TensorRT backend is scaffolded; wire up a TensorRT binding".into(),
             ))
         }
     }

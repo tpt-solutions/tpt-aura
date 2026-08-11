@@ -11,6 +11,7 @@
 //! * [`bootstrap`] — the embedded WASM decoder-key bootstrap.
 //! * [`semantic`] — the Semantic DAG (concept nodes, edges, bitmask RLE).
 //! * [`neural`] — adaptive Tier-0 / Tier-1 neural encoding.
+//! * [`diff`] — structural diffing of two AURA files (powers `aura diff`).
 //!
 //! ## Example
 //!
@@ -43,6 +44,7 @@
 pub mod bootstrap;
 pub mod codec;
 pub mod container;
+pub mod diff;
 pub mod error;
 pub mod neural;
 pub mod provenance;

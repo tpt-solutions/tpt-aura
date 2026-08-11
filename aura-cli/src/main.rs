@@ -43,6 +43,10 @@ enum Command {
     Sign(SignArgs),
     /// Compile an AURA master file to a delivery target.
     Compile(CompileArgs),
+    /// Download / scaffold the ONNX model weights used by the `aura-onnx` backend.
+    FetchModels(FetchModelsArgs),
+    /// Show structural changes between two AURA files (DAG, records, ledger).
+    Diff(DiffArgs),
 }
 
 #[derive(Parser)]
@@ -61,6 +65,27 @@ struct CreateArgs {
     /// Run the semantic detector to embed a Semantic DAG.
     #[arg(long)]
     detect: bool,
+    /// Detector backend to use with `--detect` (default: adaptive auto-select).
+    #[arg(long)]
+    backend: Option<BackendArg>,
+}
+
+/// CLI-facing detector backend selector (maps to `aura_onnx::Backend`).
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+enum BackendArg {
+    Stub,
+    Ort,
+    CoreMl,
+    TensorRt,
+}
+
+fn to_aura_backend(b: BackendArg) -> aura_onnx::Backend {
+    match b {
+        BackendArg::Stub => aura_onnx::Backend::Stub,
+        BackendArg::Ort => aura_onnx::Backend::Ort,
+        BackendArg::CoreMl => aura_onnx::Backend::CoreMl,
+        BackendArg::TensorRt => aura_onnx::Backend::TensorRt,
+    }
 }
 
 #[derive(Parser)]
@@ -119,7 +144,188 @@ fn run() -> Result<(), Err> {
         Command::Verify(a) => cmd_verify(a),
         Command::Sign(a) => cmd_sign(a),
         Command::Compile(a) => cmd_compile(a),
+        Command::FetchModels(a) => cmd_fetch_models(a),
+        Command::Diff(a) => cmd_diff(a),
     }
+}
+
+/// A model weight to download as part of `aura fetch-models`.
+#[derive(Clone)]
+struct ModelAsset {
+    /// File name written under the models directory.
+    name: String,
+    /// Source URL (verified public release asset).
+    url: String,
+    /// Human-readable note about what the model is for.
+    note: String,
+}
+
+/// Default weights: Ultralytics YOLOv8 checkpoints (canonical `.pt` releases).
+///
+/// The `aura-onnx` `onnx` feature consumes **ONNX** weights; these `.pt`
+/// checkpoints are the official source from which to export `.onnx` (see
+/// `models/README.md` written by this command).
+fn default_models() -> Vec<ModelAsset> {
+    vec![
+        ModelAsset {
+            name: "yolov8n.pt".into(),
+            url: "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8n.pt".into(),
+            note: "YOLOv8n detection backbone (used to build the object-detection DAG).".into(),
+        },
+        ModelAsset {
+            name: "yolov8n-seg.pt".into(),
+            url: "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8n-seg.pt"
+                .into(),
+            note: "YOLOv8n-seg segmentation backbone (per-concept pixel masks).".into(),
+        },
+    ]
+}
+
+#[derive(Parser)]
+struct FetchModelsArgs {
+    /// Destination directory for the model weights (created if missing).
+    #[arg(long, default_value = "models")]
+    dir: PathBuf,
+    /// Override the built-in asset list with a JSON manifest
+    /// (`[{ "name": "...", "url": "..." }]`).
+    #[arg(long)]
+    manifest: Option<PathBuf>,
+    /// Re-download even if the file already exists.
+    #[arg(long)]
+    force: bool,
+}
+
+/// Best-effort download via whatever CLI fetcher is available on the host.
+fn download_file(url: &str, dest: &Path) -> Result<(), Err> {
+    if cfg!(target_os = "windows") {
+        let ps = format!(
+            "Invoke-WebRequest -Uri '{}' -OutFile '{}' -UseBasicParsing",
+            url,
+            dest.display()
+        );
+        let status = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-Command", &ps])
+            .status()?;
+        if status.success() {
+            return Ok(());
+        }
+    }
+    for tool in ["curl", "wget"] {
+        if std::process::Command::new(tool)
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            let status = if tool == "curl" {
+                std::process::Command::new(tool)
+                    .args(["-fL", "-o", &dest.display().to_string(), url])
+                    .status()?
+            } else {
+                std::process::Command::new(tool)
+                    .args(["-O", url])
+                    .status()?
+            };
+            if status.success() {
+                return Ok(());
+            }
+        }
+    }
+    Err(format!("no supported downloader found (curl/wget/powershell) for {url}").into())
+}
+
+fn cmd_fetch_models(a: FetchModelsArgs) -> Result<(), Err> {
+    std::fs::create_dir_all(&a.dir)?;
+
+    let assets: Vec<ModelAsset> = match &a.manifest {
+        Some(p) => {
+            let raw = std::fs::read_to_string(p)?;
+            let parsed: Vec<serde_json::Value> = serde_json::from_str(&raw)
+                .map_err(|e| format!("invalid manifest {}: {e}", p.display()))?;
+            parsed
+                .into_iter()
+                .map(|v| ModelAsset {
+                    name: v["name"].as_str().unwrap_or("model.bin").to_string(),
+                    url: v["url"].as_str().unwrap_or("").to_string(),
+                    note: v["note"].as_str().unwrap_or("").to_string(),
+                })
+                .collect()
+        }
+        None => default_models(),
+    };
+
+    for asset in &assets {
+        let dest = a.dir.join(&asset.name);
+        if dest.exists() && !a.force {
+            println!("skip   {} (already present)", asset.name);
+            continue;
+        }
+        println!("fetch  {} — {}", asset.name, asset.note);
+        download_file(&asset.url, &dest)?;
+        if !dest.exists() || std::fs::metadata(&dest)?.len() == 0 {
+            return Err(format!("download produced no data for {}", asset.name).into());
+        }
+        println!(
+            "ok     {} ({} bytes)",
+            asset.name,
+            std::fs::metadata(&dest)?.len()
+        );
+    }
+
+    // Write a usage note so users know how to turn these into ONNX weights.
+    let readme = a.dir.join("README.md");
+    std::fs::write(
+        &readme,
+        "# AURA model weights\n\n\
+This directory holds the neural model weights used by the `aura-onnx` `onnx`\n\
+feature. The files fetched by `aura fetch-models` are Ultralytics YOLOv8 `.pt`\n\
+checkpoints (the canonical public releases).\n\n\
+## Exporting to ONNX\n\n\
+The `onnx` backend expects ONNX weights. Export the checkpoints with the\n\
+Ultralytics CLI (requires Python + `pip install ultralytics`):\n\n\
+```sh\n\
+yolo export model=yolov8n.pt format=onnx\n\
+yolo export model=yolov8n-seg.pt format=onnx\n\
+```\n\n\
+Then build with:\n\n\
+```sh\n\
+cargo build --workspace --features aura-onnx/onnx\n\
+aura create photo.png -o photo.aura --detect --onnx\n\
+```\n",
+    )?;
+    println!("wrote  {} (usage notes)", readme.display());
+    println!(
+        "\nfetch-models complete; {} weights in {}",
+        assets.len(),
+        a.dir.display()
+    );
+    Ok(())
+}
+
+#[derive(Parser)]
+struct DiffArgs {
+    /// First (older) AURA file.
+    a: PathBuf,
+    /// Second (newer) AURA file.
+    b: PathBuf,
+    /// Emit the diff as JSON instead of a human-readable report.
+    #[arg(long)]
+    json: bool,
+}
+
+fn cmd_diff(a: DiffArgs) -> Result<(), Err> {
+    let bytes_a = std::fs::read(&a.a)?;
+    let bytes_b = std::fs::read(&a.b)?;
+    let file_a = open(&bytes_a)?;
+    let file_b = open(&bytes_b)?;
+
+    let report = libaura::diff::diff(&file_a, &file_b);
+    if a.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        print!("{report}");
+    }
+    Ok(())
 }
 
 /// Load an image file into an `RgbImage`.
@@ -190,7 +396,11 @@ fn cmd_create(a: CreateArgs) -> Result<(), Err> {
     scene.push(Box::new(lum));
 
     let dag: SemanticDAG = if a.detect {
-        aura_onnx::default_detector().detect(&img)?
+        let detector: Box<dyn aura_onnx::Detector> = match a.backend {
+            Some(b) => aura_onnx::detector_for(to_aura_backend(b))?,
+            None => aura_onnx::default_detector(),
+        };
+        detector.detect(&img)?
     } else {
         SemanticDAG::new()
     };

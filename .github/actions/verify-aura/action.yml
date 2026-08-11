@@ -1,0 +1,34 @@
+name: Verify AURA provenance
+description: >
+  Build the `aura` CLI and verify the cryptographic trust chain of every AURA
+  file under a path. Use it to dogfood C2PA-style provenance on the project's
+  own media assets in pull requests.
+
+inputs:
+  path:
+    description: Directory (or file) to scan for `.aura` files.
+    required: false
+    default: "."
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Verify every AURA file's trust chain
+      shell: bash
+      env:
+        SCAN_PATH: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+        FOUND=0
+        while IFS= read -r -d '' f; do
+          FOUND=1
+          echo "::group::aura verify ${f}"
+          cargo run -q -p aura-cli --bin aura -- verify "${f}"
+          echo "::endgroup::"
+        done < <(find "${SCAN_PATH}" -type f -name '*.aura' -print0)
+        if [ "${FOUND}" -eq 0 ]; then
+          echo "no .aura files found under ${SCAN_PATH}; nothing to verify"
+        fi

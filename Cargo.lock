@@ -139,6 +139,7 @@ dependencies = [
  "image",
  "libaura",
  "rand 0.8.7",
+ "serde_json",
 ]
 
 [[package]]
@@ -945,6 +946,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "ed25519-dalek",
+ "serde",
  "sha3",
  "thiserror 1.0.69",
 ]

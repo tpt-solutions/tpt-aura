@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AURA — Self-Decoding Viewer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0d1117;
+        --panel: #161b22;
+        --border: #30363d;
+        --fg: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+      }
+      body {
+        margin: 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: var(--bg);
+        color: var(--fg);
+        padding: 2rem;
+        line-height: 1.5;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin: 0 0 0.25rem;
+      }
+      .sub {
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+      .controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      button,
+      label.file {
+        background: var(--accent);
+        color: #04101f;
+        border: 0;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      label.file input {
+        display: none;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      #preview {
+        width: 100%;
+        image-rendering: pixelated;
+        background: #000;
+        border-radius: 4px;
+      }
+      #output {
+        white-space: pre-wrap;
+        font-size: 0.85rem;
+        overflow-x: auto;
+      }
+      .line {
+        margin: 0.1rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AURA — Self-Decoding Viewer</h1>
+    <div class="sub">
+      Load an <code>.aura</code> master file and watch it decode itself: the Tier-0
+      base image is rendered from the file, the Semantic DAG is listed, and the
+      embedded WASM <em>bootstrap</em> is instantiated live in your browser.
+    </div>
+
+    <div class="controls">
+      <label class="file">
+        Choose .aura file
+        <input id="file" type="file" accept=".aura" />
+      </label>
+      <button id="sample">Load bundled sample.aura</button>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <canvas id="preview" width="16" height="16"></canvas>
+      </div>
+      <div class="panel">
+        <div id="output">Open a file or load the sample to begin.</div>
+      </div>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>

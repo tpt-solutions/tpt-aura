@@ -1,0 +1,15 @@
+# These owners are the default owners for everything in the repo.
+# See https://docs.github.com/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+
+*       @tpt-org/aura-maintainers
+
+# Core library and cryptographic provenance — require review from maintainers.
+/libaura/       @tpt-org/aura-maintainers
+/aura-onnx/     @tpt-org/aura-maintainers
+
+# Release process and CI definitions.
+/.github/workflows/   @tpt-org/aura-maintainers
+
+# Documentation.
+/docs/       @tpt-org/aura-maintainers
+/*.md        @tpt-org/aura-maintainers

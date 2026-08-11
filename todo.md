@@ -132,4 +132,41 @@
 
 ---
 
+## Phase 9 — Platform Review Follow-ups (2026-08-11)
+
+> From a full-codebase review covering bugs, docs/adoption gaps, and innovation ideas.
+
+### Bugs
+
+- [x] `libaura::container::open()`: section-table loop panicked (slice-index-out-of-bounds) on a truncated `.aura` file with an inflated `count`; now bounds-checked and returns `AuraError::UnexpectedEof` (regression test `truncated_section_table_errors_instead_of_panicking` added)
+- [x] README Quick Start invoked `aura-cli create/inspect/...`, but the matching binary is named `aura` (`aura-cli/Cargo.toml` `[[bin]] name = "aura"`); README now uses `aura` and documents the binary location explicitly.
+- [x] README's `compile --target web` example claimed `.avif` output, but `cmd_compile`'s web branch only encodes PNG/JPEG via the `image` crate — no AVIF encoder wired up; README now documents the PNG/JPEG default (AVIF/WebP delivery noted as future work in `docs/SPEC.md`).
+
+### Missing infrastructure
+
+- [x] Add `CHANGELOG.md` (currently only a single-entry `RELEASE_NOTES.md`), ideally generated via `git-cliff`/`release-plz` — added a Keep-a-Changelog style `CHANGELOG.md` with `Unreleased` + `0.1.0` sections.
+- [x] Add `docs/` folder or render `spec.txt` as `SPEC.md`/mdBook so RFC 001 is browsable on GitHub — added `docs/SPEC.md` (rendered Markdown) and linked it from the README.
+- [x] Add `examples/` directory with a runnable quickstart (create → inspect → verify → sign → compile), mirroring `aura-cli/tests/e2e.rs` — added `aura-cli/examples/quickstart.rs` (in-process, mirrors the e2e pipeline).
+- [x] Bundle 1-2 tiny sample images so `cargo run --example quickstart` works with zero external downloads — the quickstart generates its source image in-memory (zero downloads), and `examples/assets/sample.png` is bundled as a reference fixture.
+- [x] Add `CODEOWNERS`
+- [x] Add `SECURITY.md`
+- [x] Add `dependabot.yml` (or Renovate config)
+- [x] Add a release/publish GitHub Actions workflow — added `.github/workflows/release.yml` (verify → publish to crates.io → GitHub release).
+- [x] Expand CI to a matrix: test declared MSRV (1.74) and add Windows/macOS runners (currently `ubuntu-latest` + stable only) — `ci.yml` now runs a 3-OS matrix plus an MSRV job and an examples/quickstart job.
+- [x] Audit `serde`/`bincode` workspace dependencies — declared but not referenced in any of the three crates; remove if unused — both removed from `[workspace.dependencies]` (only transitive deps remain in `Cargo.lock`).
+
+### Usability / automation
+
+- [x] Add a model-weights bootstrap command/script (e.g. `aura fetch-models`) — added `aura fetch-models` (downloads the canonical Ultralytics YOLOv8 `.pt` checkpoints into `models/` and writes an export-to-ONNX `README.md`; supports `--dir`/`--manifest`/`--force`).
+- [x] Add a "5-minute quickstart" section to README using the corrected binary name
+
+### Innovation ideas (not yet scoped)
+
+- [x] Browser-based WASM viewer/demo proving the embedded "self-decoding" bootstrap live — added `web/` (zero-dependency `index.html` + `main.js`) that parses an `.aura` file in JS, renders the Tier-0 base image, lists the Semantic DAG/ledger, and instantiates the embedded WASM bootstrap live in-browser. Verified the JS parser against `examples/assets/sample.aura` (matches `libaura::container::open`: CRC-32, sections, DAG, ledger).
+- [x] GitHub Action that verifies `.aura` provenance chains on PRs (dogfood C2PA-style trust on the project's own media assets) — added `.github/actions/verify-aura/action.yml` (builds `aura`, runs `aura verify` on every `.aura` file) and a `verify-aura` CI job over `examples/assets`. Committed a signed `examples/assets/sample.aura` as the dogfood asset.
+- [x] `aura diff` command to visualize semantic-DAG changes between two file versions — added `libaura::diff` (DAG/record/ledger diff) with a `Display` report and `--json` output, wired to `aura diff <a> <b>` (with unit tests).
+- [x] Pluggable detector backends beyond ONNX (e.g. CoreML/TensorRT feature flags) matching the "adaptive" framing — added `Backend` enum + `detector_for()` + adaptive `default_detector()` in `aura-onnx`, plus `coreml`/`tensorrt` feature-gated scaffold backends and `aura create --backend <stub|ort|coreml|tensorrt>`.
+
+---
+
 Legend: `[x]` done · `[~]` scaffolded (needs model weights / network / manual step)

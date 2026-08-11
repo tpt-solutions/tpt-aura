@@ -22,3 +22,7 @@ default = []
 # Real ONNX Runtime backend. Requires network access at build time to fetch the
 # prebuilt ONNX Runtime, plus model weight files (see models/ in .gitignore).
 onnx = ["dep:ort"]
+# Apple CoreML backend (scaffold — wire up a coreml-rs binding to enable).
+coreml = []
+# NVIDIA TensorRT backend (scaffold — wire up a TensorRT binding to enable).
+tensorrt = []

@@ -18,7 +18,8 @@ AURA is explicitly **not** for edge delivery. It is the master format from
 which all delivery formats are *compiled* (web, VR/USD, print/TIFF, legal/JPEG).
 
 > This is an open-source reference implementation of the
-> [RFC 001 AURA specification](./spec.txt).
+> [RFC 001 AURA specification](./docs/SPEC.md) (also available as plain text in
+> [`spec.txt`](./spec.txt)).
 
 ## Workspace layout
 
@@ -44,22 +45,45 @@ cargo build --workspace --features aura-onnx/onnx
 
 ## Quick start
 
+> The CLI binary is named **`aura`** (the crate is `aura-cli`). Build it with
+> `cargo build --workspace`; the binary lands at `target/debug/aura`.
+
+### 5-minute quickstart
+
 ```sh
-# Create an AURA file from an image
-aura-cli create photo.png -o photo.aura
+# Build the CLI
+cargo build --workspace
+
+# Create an AURA file from an image (a device key is generated automatically)
+./target/debug/aura create photo.png -o photo.aura
 
 # Pretty-print every section
-aura-cli inspect photo.aura
+./target/debug/aura inspect photo.aura
 
 # Verify the cryptographic trust chain
-aura-cli verify photo.aura
+./target/debug/aura verify photo.aura
 
-# Sign the ledger with a device key
-aura-cli sign photo.aura --key device.key
+# Sign the ledger with the device key produced during `create`
+./target/debug/aura sign photo.aura --key photo.aura.key -o signed.aura
 
-# Compile to a delivery target
-aura-cli compile photo.aura --target web -o photo.avif
+# Compile to a delivery target (Tier-0 base layer; PNG is the web default)
+./target/debug/aura compile signed.aura --target web -o photo.png
 ```
+
+### Available commands
+
+| Command | Description |
+|---------|-------------|
+| `aura create <input> -o <output.aura>` | Build an AURA file (Tier-0 base + optional Semantic DAG via `--detect`). |
+| `aura inspect <file.aura>` | Pretty-print every section. |
+| `aura verify <file.aura>` | Verify the cryptographic trust chain. |
+| `aura sign <file.aura> --key <key>` | Append a signed ledger entry. |
+| `aura compile <file.aura> --target <web|vr|print|legal> -o <out>` | Compile to a delivery target. |
+
+> **Note on `--target web`:** the reference compiler emits the Tier-0 base
+> layer as a standard **PNG/JPEG** (format inferred from the output extension).
+> AVIF/WebP delivery is planned; see the RFC 001 "Compiler" model in
+> [`docs/SPEC.md`](./docs/SPEC.md).
 
 ## Testing
 

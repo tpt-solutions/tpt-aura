@@ -1,12 +1,12 @@
 //! Runnable quickstart: create → inspect → verify → sign → compile.
 //!
-//! This mirrors `aura-cli/tests/e2e.rs` but runs in-process (no subprocess) and
+//! This mirrors `tpt-aura-cli/tests/e2e.rs` but runs in-process (no subprocess) and
 //! needs **zero external downloads** — the source image is generated in memory.
 //!
 //! Run it with:
 //!
 //! ```sh
-//! cargo run -p aura-cli --example quickstart
+//! cargo run -p tpt-aura-cli --example quickstart
 //! ```
 //!
 //! It writes its artifacts into a temporary directory and prints the pipeline
@@ -17,11 +17,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use ed25519_dalek::SigningKey;
 use image::{ImageBuffer, Rgb};
-use libaura::bootstrap::Bootstrap;
-use libaura::container::{open, AuraBuilder, LuminanceChromaRecord};
-use libaura::neural::{encode_tier0, RgbImage};
-use libaura::provenance::{sha3_256, GenesisBlock, OpType, ProvenanceLedger};
-use libaura::semantic::SemanticDAG;
+use tpt_aura::bootstrap::Bootstrap;
+use tpt_aura::container::{open, AuraBuilder, LuminanceChromaRecord};
+use tpt_aura::neural::{encode_tier0, RgbImage};
+use tpt_aura::provenance::{sha3_256, GenesisBlock, OpType, ProvenanceLedger};
+use tpt_aura::semantic::SemanticDAG;
 use rand::RngCore;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -56,11 +56,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sampling: 1,
         data: base.data().to_vec(),
     };
-    let mut scene = libaura::container::SceneRecord::new();
+    let mut scene = tpt_aura::container::SceneRecord::new();
     scene.push(Box::new(lum));
 
     // Embed a Semantic DAG (offline stub detector — no model weights needed).
-    let dag: SemanticDAG = aura_onnx::default_detector().detect(&rgb)?;
+    let dag: SemanticDAG = tpt_aura_onnx::default_detector().detect(&rgb)?;
 
     let mut key = [0u8; 32];
     rand::thread_rng().fill_bytes(&mut key);

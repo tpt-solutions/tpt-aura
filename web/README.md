@@ -3,7 +3,7 @@
 A dependency-free, self-contained demo that proves the AURA **self-decoding
 WASM bootstrap** live in a browser. It is pure HTML + JavaScript (no build
 step, no frameworks) and parses the AURA container format directly, mirroring
-`libaura::container::open`.
+`tpt-aura::container::open`.
 
 ## What it shows
 
@@ -37,6 +37,6 @@ You can also use **Choose .aura file** to load any AURA master file from disk.
 | `main.js` | AURA parser, canvas renderer, and live WASM bootstrap instantiation. |
 
 > The embedded WASM is currently the placeholder decoder key from
-> `libaura::bootstrap` (a valid `add` module). A production build would embed the
+> `tpt-aura::bootstrap` (a valid `add` module). A production build would embed the
 > real AURA decoding primitives, which this viewer would then run to decode the
 > container instead of the hand-written JS fallback.

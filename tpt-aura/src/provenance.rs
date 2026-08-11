@@ -316,7 +316,7 @@ impl ProvenanceLedger {
         }
         let manifest = format!(
             "{{\
-\"claimGenerator\":\"aura-cli/0.1.0\",\
+\"claimGenerator\":\"tpt-aura-cli/0.1.0\",\
 \"assertions\":{{\
 \"c2pa.actions\":[{}],\
 \"aura.genesis\":\"{}\"\

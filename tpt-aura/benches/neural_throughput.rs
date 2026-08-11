@@ -1,9 +1,9 @@
 //! Benchmark: Tier-0 neural encode/decode throughput.
 //!
-//! Run with `cargo bench -p libaura`.
+//! Run with `cargo bench -p tpt_aura`.
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use libaura::neural::{decode_tier0, encode_tier0, RgbImage};
+use tpt_aura::neural::{decode_tier0, encode_tier0, RgbImage};
 
 fn gradient(w: u32, h: u32) -> RgbImage {
     let mut img = RgbImage::new(w, h);

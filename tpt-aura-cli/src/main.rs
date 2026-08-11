@@ -13,13 +13,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, Subcommand};
 use ed25519_dalek::SigningKey;
-use libaura::bootstrap::Bootstrap;
-use libaura::container::{
+use tpt_aura::bootstrap::Bootstrap;
+use tpt_aura::container::{
     open, AuraBuilder, AuraFile, LuminanceChromaRecord, REC_LUMINANCE_CHROMA,
 };
-use libaura::neural::{encode_tier0, RgbImage};
-use libaura::provenance::{sha3_256, GenesisBlock, OpType, ProvenanceLedger};
-use libaura::semantic::SemanticDAG;
+use tpt_aura::neural::{encode_tier0, RgbImage};
+use tpt_aura::provenance::{sha3_256, GenesisBlock, OpType, ProvenanceLedger};
+use tpt_aura::semantic::SemanticDAG;
 use rand::RngCore;
 
 type Err = Box<dyn std::error::Error>;
@@ -43,7 +43,7 @@ enum Command {
     Sign(SignArgs),
     /// Compile an AURA master file to a delivery target.
     Compile(CompileArgs),
-    /// Download / scaffold the ONNX model weights used by the `aura-onnx` backend.
+    /// Download / scaffold the ONNX model weights used by the `tpt-aura-onnx` backend.
     FetchModels(FetchModelsArgs),
     /// Show structural changes between two AURA files (DAG, records, ledger).
     Diff(DiffArgs),
@@ -70,7 +70,7 @@ struct CreateArgs {
     backend: Option<BackendArg>,
 }
 
-/// CLI-facing detector backend selector (maps to `aura_onnx::Backend`).
+/// CLI-facing detector backend selector (maps to `tpt_aura_onnx::Backend`).
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]
 enum BackendArg {
     Stub,
@@ -79,12 +79,12 @@ enum BackendArg {
     TensorRt,
 }
 
-fn to_aura_backend(b: BackendArg) -> aura_onnx::Backend {
+fn to_aura_backend(b: BackendArg) -> tpt_aura_onnx::Backend {
     match b {
-        BackendArg::Stub => aura_onnx::Backend::Stub,
-        BackendArg::Ort => aura_onnx::Backend::Ort,
-        BackendArg::CoreMl => aura_onnx::Backend::CoreMl,
-        BackendArg::TensorRt => aura_onnx::Backend::TensorRt,
+        BackendArg::Stub => tpt_aura_onnx::Backend::Stub,
+        BackendArg::Ort => tpt_aura_onnx::Backend::Ort,
+        BackendArg::CoreMl => tpt_aura_onnx::Backend::CoreMl,
+        BackendArg::TensorRt => tpt_aura_onnx::Backend::TensorRt,
     }
 }
 
@@ -162,7 +162,7 @@ struct ModelAsset {
 
 /// Default weights: Ultralytics YOLOv8 checkpoints (canonical `.pt` releases).
 ///
-/// The `aura-onnx` `onnx` feature consumes **ONNX** weights; these `.pt`
+/// The `tpt-aura-onnx` `onnx` feature consumes **ONNX** weights; these `.pt`
 /// checkpoints are the official source from which to export `.onnx` (see
 /// `models/README.md` written by this command).
 fn default_models() -> Vec<ModelAsset> {
@@ -277,7 +277,7 @@ fn cmd_fetch_models(a: FetchModelsArgs) -> Result<(), Err> {
     std::fs::write(
         &readme,
         "# AURA model weights\n\n\
-This directory holds the neural model weights used by the `aura-onnx` `onnx`\n\
+This directory holds the neural model weights used by the `tpt-aura-onnx` `onnx`\n\
 feature. The files fetched by `aura fetch-models` are Ultralytics YOLOv8 `.pt`\n\
 checkpoints (the canonical public releases).\n\n\
 ## Exporting to ONNX\n\n\
@@ -289,7 +289,7 @@ yolo export model=yolov8n-seg.pt format=onnx\n\
 ```\n\n\
 Then build with:\n\n\
 ```sh\n\
-cargo build --workspace --features aura-onnx/onnx\n\
+cargo build --workspace --features tpt-aura-onnx/onnx\n\
 aura create photo.png -o photo.aura --detect --onnx\n\
 ```\n",
     )?;
@@ -319,7 +319,7 @@ fn cmd_diff(a: DiffArgs) -> Result<(), Err> {
     let file_a = open(&bytes_a)?;
     let file_b = open(&bytes_b)?;
 
-    let report = libaura::diff::diff(&file_a, &file_b);
+    let report = tpt_aura::diff::diff(&file_a, &file_b);
     if a.json {
         println!("{}", serde_json::to_string_pretty(&report)?);
     } else {
@@ -392,13 +392,13 @@ fn cmd_create(a: CreateArgs) -> Result<(), Err> {
         sampling: 1,
         data: base.data().to_vec(),
     };
-    let mut scene = libaura::container::SceneRecord::new();
+    let mut scene = tpt_aura::container::SceneRecord::new();
     scene.push(Box::new(lum));
 
     let dag: SemanticDAG = if a.detect {
-        let detector: Box<dyn aura_onnx::Detector> = match a.backend {
-            Some(b) => aura_onnx::detector_for(to_aura_backend(b))?,
-            None => aura_onnx::default_detector(),
+        let detector: Box<dyn tpt_aura_onnx::Detector> = match a.backend {
+            Some(b) => tpt_aura_onnx::detector_for(to_aura_backend(b))?,
+            None => tpt_aura_onnx::default_detector(),
         };
         detector.detect(&img)?
     } else {
@@ -411,7 +411,7 @@ fn cmd_create(a: CreateArgs) -> Result<(), Err> {
     let genesis = GenesisBlock::sign(&key, sensor_hash, device_id, now_ms());
 
     let mut ledger = ProvenanceLedger::new(&key, sensor_hash);
-    ledger.append(OpType::Capture, "aura-cli/create", &key)?;
+    ledger.append(OpType::Capture, "tpt-aura-cli/create", &key)?;
 
     let builder = AuraBuilder::new(Bootstrap::with_default_wasm(), genesis, scene, dag, ledger);
     let bytes = builder.build()?;
@@ -509,7 +509,7 @@ fn cmd_sign(a: SignArgs) -> Result<(), Err> {
 
     let bytes = std::fs::read(&a.file)?;
     let mut file: AuraFile = open(&bytes)?;
-    file.ledger.append(OpType::Other, "aura-cli/sign", &key)?;
+    file.ledger.append(OpType::Other, "tpt-aura-cli/sign", &key)?;
 
     let builder = AuraBuilder::new(
         file.bootstrap,

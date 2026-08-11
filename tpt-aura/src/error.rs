@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-/// All fallible operations in `libaura` surface an [`AuraError`].
+/// All fallible operations in `tpt-aura` surface an [`AuraError`].
 #[derive(Error, Debug)]
 pub enum AuraError {
     /// Wraps a `std::io::Error` raised while reading or writing bytes.

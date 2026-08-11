@@ -7,7 +7,7 @@
 //!
 //! The bytes below are a *valid, minimal* WASM module (exports an `add`
 //! function) used as a placeholder decoder key. A production build would embed
-//! the real AURA decoding primitives here (see `libaura/bootstrap/decoder.wat`).
+//! the real AURA decoding primitives here (see `tpt-aura/bootstrap/decoder.wat`).
 //!
 //! Equivalent WAT:
 //! ```wat

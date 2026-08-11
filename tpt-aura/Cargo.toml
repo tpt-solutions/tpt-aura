@@ -1,5 +1,5 @@
 [package]
-name = "libaura"
+name = "tpt-aura"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,8 +7,8 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 description = "Core library for the AURA (Adaptive Universal Record Architecture) master media format."
-keywords.workspace = true
-categories.workspace = true
+keywords = ["media", "provenance", "c2pa", "semantic", "wasm"]
+categories = ["multimedia", "encoding", "cryptography", "data-structures"]
 
 [dependencies]
 thiserror.workspace = true

@@ -63,7 +63,7 @@ jobs:
       - name: Build examples
         run: cargo build --workspace --examples
       - name: Run quickstart example
-        run: cargo run -p aura-cli --example quickstart
+        run: cargo run -p tpt-aura-cli --example quickstart
 
   verify-aura:
     name: Dogfood AURA provenance on assets

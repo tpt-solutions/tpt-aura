@@ -32,15 +32,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Publish libaura
-        run: cargo publish -p libaura --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish tpt-aura
+        run: cargo publish -p tpt-aura --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
       # Give crates.io a moment to index the base crate before dependents.
-      - name: Wait for libaura to index
+      - name: Wait for tpt-aura to index
         run: sleep 30
-      - name: Publish aura-onnx
-        run: cargo publish -p aura-onnx --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      - name: Publish aura-cli
-        run: cargo publish -p aura-cli --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish tpt-aura-onnx
+        run: cargo publish -p tpt-aura-onnx --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish tpt-aura-cli
+        run: cargo publish -p tpt-aura-cli --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   github-release:
     name: Cut GitHub release

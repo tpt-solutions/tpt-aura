@@ -34,5 +34,5 @@ you once a patch is available.
 ## Scope notes
 
 AURA is a reference implementation. The embedded WASM bootstrap and the ONNX
-backends (`aura-onnx`, feature `onnx`) depend on external toolchains/runtime;
+backends (`tpt-aura-onnx`, feature `onnx`) depend on external toolchains/runtime;
 vulnerabilities in those third-party components should be reported upstream.

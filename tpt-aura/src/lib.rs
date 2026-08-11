@@ -1,4 +1,4 @@
-//! # libaura
+//! # tpt-aura
 //!
 //! Core library for the **AURA (Adaptive Universal Record Architecture)** master
 //! media format: a polymorphic, semantically-aware, cryptographically sealed
@@ -16,13 +16,13 @@
 //! ## Example
 //!
 //! ```no_run
-//! use libaura::container::{AuraBuilder, AuraFile, open, SceneRecord};
-//! use libaura::bootstrap::Bootstrap;
-//! use libaura::provenance::{GenesisBlock, ProvenanceLedger, sha3_256};
-//! use libaura::semantic::SemanticDAG;
+//! use tpt_aura::container::{AuraBuilder, AuraFile, open, SceneRecord};
+//! use tpt_aura::bootstrap::Bootstrap;
+//! use tpt_aura::provenance::{GenesisBlock, ProvenanceLedger, sha3_256};
+//! use tpt_aura::semantic::SemanticDAG;
 //! use ed25519_dalek::SigningKey;
 //!
-//! # fn main() -> Result<(), libaura::error::AuraError> {
+//! # fn main() -> Result<(), tpt_aura::error::AuraError> {
 //! let key = SigningKey::from_bytes(&[7u8; 32]);
 //! let data_hash = sha3_256(b"raw-sensor");
 //! let genesis = GenesisBlock::sign(&key, data_hash, [1u8; 16], 0);

@@ -6,9 +6,9 @@
 //! scoring) are available behind the `onnx` feature, which brings in ONNX
 //! Runtime via [`ort`].
 
-use libaura::error::AuraError;
-use libaura::neural::RgbImage;
-use libaura::semantic::{ConceptEdge, ConceptNode, SemanticDAG};
+use tpt_aura::error::AuraError;
+use tpt_aura::neural::RgbImage;
+use tpt_aura::semantic::{ConceptEdge, ConceptNode, SemanticDAG};
 
 /// A concept detector that turns an image into a [`SemanticDAG`].
 pub trait Detector {
@@ -38,7 +38,7 @@ pub enum Backend {
 /// Build a detector for the explicitly requested [`Backend`].
 ///
 /// Returns [`AuraError::Unsupported`] if the backend's feature is not compiled
-/// in (e.g. `Ort` without `--features aura-onnx/onnx`).
+/// in (e.g. `Ort` without `--features tpt-aura-onnx/onnx`).
 pub fn detector_for(backend: Backend) -> Result<Box<dyn Detector>, AuraError> {
     match backend {
         Backend::Stub => Ok(Box::new(StubDetector)),
@@ -246,16 +246,16 @@ pub mod onnx {
 
 /// Apple CoreML detector backend (scaffold).
 ///
-/// Enable with `--features aura-onnx/coreml`. A production build would bridge to
+/// Enable with `--features tpt-aura-onnx/coreml`. A production build would bridge to
 /// CoreML via the `coremltools`/`coreml-rs` ecosystem; the detector here is a
 /// placeholder that returns [`AuraError::Unsupported`] until that integration
 /// lands, so the feature compiles and is selectable today.
 #[cfg(feature = "coreml")]
 pub mod coreml {
     use super::Detector;
-    use libaura::error::AuraError;
-    use libaura::neural::RgbImage;
-    use libaura::semantic::SemanticDAG;
+    use tpt_aura::error::AuraError;
+    use tpt_aura::neural::RgbImage;
+    use tpt_aura::semantic::SemanticDAG;
 
     /// Placeholder CoreML-backed detector.
     pub struct CoreMlDetector;
@@ -275,15 +275,15 @@ pub mod coreml {
 
 /// NVIDIA TensorRT detector backend (scaffold).
 ///
-/// Enable with `--features aura-onnx/tensorrt`. A production build would wrap a
+/// Enable with `--features tpt-aura-onnx/tensorrt`. A production build would wrap a
 /// TensorRT engine; the detector here is a placeholder returning
 /// [`AuraError::Unsupported`] so the feature compiles and is selectable today.
 #[cfg(feature = "tensorrt")]
 pub mod tensorrt {
     use super::Detector;
-    use libaura::error::AuraError;
-    use libaura::neural::RgbImage;
-    use libaura::semantic::SemanticDAG;
+    use tpt_aura::error::AuraError;
+    use tpt_aura::neural::RgbImage;
+    use tpt_aura::semantic::SemanticDAG;
 
     /// Placeholder TensorRT-backed detector.
     pub struct TensorRtDetector;

@@ -5,7 +5,7 @@
 //!   is exact), so `encode → decode` is pixel-true at base resolution.
 //! * **Tier 1** would store a small neural reconstruction payload; on an NPU it
 //!   reconstructs the master-resolution image. The full ONNX backend lives in
-//!   `aura-onnx` (feature `onnx`); here we provide the payload container and a
+//!   `tpt-aura-onnx` (feature `onnx`); here we provide the payload container and a
 //!   clearly-flagged `Unsupported` stub for reconstruction.
 
 use crate::codec::{Reader, Writer};
@@ -206,7 +206,7 @@ pub fn psnr(a: &RgbImage, b: &RgbImage) -> Result<f64, AuraError> {
 }
 
 /// Container for the Tier-1 neural reconstruction payload (e.g. super-resolution
-/// weights embedded in the file). The full ONNX runtime lives in `aura-onnx`.
+/// weights embedded in the file). The full ONNX runtime lives in `tpt-aura-onnx`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NeuralPayloadRecord {
     /// Name of the embedded model (e.g. `"real-esrgan-x4"`).
@@ -234,14 +234,14 @@ impl NeuralPayloadRecord {
 }
 
 /// Reconstruct the master-resolution image from a Tier-0 base layer and a Tier-1
-/// payload. The real implementation requires the `aura-onnx` ONNX backend; this
+/// payload. The real implementation requires the `tpt-aura-onnx` ONNX backend; this
 /// reference build returns [`AuraError::Unsupported`].
 pub fn reconstruct_tier1(
     _base: &Tier0Base,
     _payload: &NeuralPayloadRecord,
 ) -> Result<RgbImage, AuraError> {
     Err(AuraError::Unsupported(
-        "Tier-1 neural reconstruction requires the `aura-onnx` (onnx) feature with model weights"
+        "Tier-1 neural reconstruction requires the `tpt-aura-onnx` (onnx) feature with model weights"
             .into(),
     ))
 }

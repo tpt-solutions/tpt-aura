@@ -1,6 +1,6 @@
 // AURA browser viewer — proves the embedded "self-decoding" WASM bootstrap live.
 //
-// It parses the AURA container in pure JavaScript (port of libaura's `open`),
+// It parses the AURA container in pure JavaScript (port of tpt-aura's `open`),
 // renders the Tier-0 base layer, lists the Semantic DAG, and — crucially —
 // instantiates the embedded WASM bootstrap in the browser to show the file is
 // genuinely self-describing: a runtime can compile the embedded decoder key on
@@ -17,7 +17,7 @@ const REC = {
 };
 const FOOTER_SIZE = 4 + 32; // CRC-32 + SHA-3-256
 
-// Little-endian reader over a Uint8Array (matches libaura::codec::Reader).
+// Little-endian reader over a Uint8Array (matches tpt-aura::codec::Reader).
 class Reader {
   constructor(buf) {
     this.buf = buf;

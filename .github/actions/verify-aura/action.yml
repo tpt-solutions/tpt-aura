@@ -26,7 +26,7 @@ runs:
         while IFS= read -r -d '' f; do
           FOUND=1
           echo "::group::aura verify ${f}"
-          cargo run -q -p aura-cli --bin aura -- verify "${f}"
+          cargo run -q -p tpt-aura-cli --bin aura -- verify "${f}"
           echo "::endgroup::"
         done < <(find "${SCAN_PATH}" -type f -name '*.aura' -print0)
         if [ "${FOUND}" -eq 0 ]; then

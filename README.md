@@ -25,9 +25,9 @@ which all delivery formats are *compiled* (web, VR/USD, print/TIFF, legal/JPEG).
 
 | Crate | Description |
 |-------|-------------|
-| `libaura` | Core library: container, provenance, bootstrap, semantic DAG, neural encoding. |
-| `aura-cli` | Command-line tool (`aura create/inspect/verify/sign/compile`). |
-| `aura-onnx` | Optional ONNX inference (YOLOv8 / SAM / CLIP) for populating the Semantic DAG. |
+| `tpt-aura` | Core library: container, provenance, bootstrap, semantic DAG, neural encoding. |
+| `tpt-aura-cli` | Command-line tool (`aura create/inspect/verify/sign/compile`). |
+| `tpt-aura-onnx` | Optional ONNX inference (YOLOv8 / SAM / CLIP) for populating the Semantic DAG. |
 
 ## Building
 
@@ -35,17 +35,17 @@ which all delivery formats are *compiled* (web, VR/USD, print/TIFF, legal/JPEG).
 cargo build --workspace
 ```
 
-The `aura-onnx` crate's real ONNX backend is gated behind the `onnx` feature
+The `tpt-aura-onnx` crate's real ONNX backend is gated behind the `onnx` feature
 (requires network access at build time to fetch ONNX Runtime). By default a
 pure-Rust stub detector is used so the workspace builds and tests offline.
 
 ```sh
-cargo build --workspace --features aura-onnx/onnx
+cargo build --workspace --features tpt-aura-onnx/onnx
 ```
 
 ## Quick start
 
-> The CLI binary is named **`aura`** (the crate is `aura-cli`). Build it with
+> The CLI binary is named **`aura`** (the crate is `tpt-aura-cli`). Build it with
 > `cargo build --workspace`; the binary lands at `target/debug/aura`.
 
 ### 5-minute quickstart

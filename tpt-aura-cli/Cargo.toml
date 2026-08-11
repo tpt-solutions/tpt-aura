@@ -1,5 +1,5 @@
 [package]
-name = "aura-cli"
+name = "tpt-aura-cli"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,16 +7,16 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 description = "Command-line tool for the AURA master media format (create / inspect / verify / sign / compile)."
-keywords.workspace = true
-categories.workspace = true
+keywords = ["media", "cli", "provenance", "c2pa", "metadata"]
+categories = ["command-line-utilities", "multimedia"]
 
 [[bin]]
 name = "aura"
 path = "src/main.rs"
 
 [dependencies]
-libaura = { path = "../libaura" }
-aura-onnx = { path = "../aura-onnx" }
+tpt-aura = { path = "../tpt-aura" }
+tpt-aura-onnx = { path = "../tpt-aura-onnx" }
 clap.workspace = true
 rand.workspace = true
 image = "0.25"

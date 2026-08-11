@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "libaura",
-    "aura-cli",
-    "aura-onnx",
+    "tpt-aura",
+    "tpt-aura-cli",
+    "tpt-aura-onnx",
 ]
 
 [workspace.package]
@@ -14,8 +14,6 @@ license = "Apache-2.0 OR MIT"
 repository = "https://github.com/tpt-org/aura"
 authors = ["TPT Solutions"]
 description = "Adaptive Universal Record Architecture — a cryptographically sealed, semantically-aware master media format."
-keywords = ["media", "provenance", "c2pa", "wasm", "spatial"]
-categories = ["multimedia", "encoding", "cryptography"]
 
 [workspace.dependencies]
 thiserror = "1.0"

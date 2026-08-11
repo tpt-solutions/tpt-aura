@@ -130,27 +130,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aura-cli"
-version = "0.1.0"
-dependencies = [
- "aura-onnx",
- "clap",
- "ed25519-dalek",
- "image",
- "libaura",
- "rand 0.8.7",
- "serde_json",
-]
-
-[[package]]
-name = "aura-onnx"
-version = "0.1.0"
-dependencies = [
- "libaura",
- "ort",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -939,17 +918,6 @@ name = "lebe"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a79a3332a6609480d7d0c9eab957bca6b455b91bb84e66d19f5ff66294b85b8"
-
-[[package]]
-name = "libaura"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "ed25519-dalek",
- "serde",
- "sha3",
- "thiserror 1.0.69",
-]
 
 [[package]]
 name = "libc"
@@ -1971,6 +1939,38 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "tpt-aura"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "ed25519-dalek",
+ "serde",
+ "sha3",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "tpt-aura-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "ed25519-dalek",
+ "image",
+ "rand 0.8.7",
+ "serde_json",
+ "tpt-aura",
+ "tpt-aura-onnx",
+]
+
+[[package]]
+name = "tpt-aura-onnx"
+version = "0.1.0"
+dependencies = [
+ "ort",
+ "tpt-aura",
 ]
 
 [[package]]

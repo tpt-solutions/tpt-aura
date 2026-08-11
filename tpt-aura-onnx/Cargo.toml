@@ -1,5 +1,5 @@
 [package]
-name = "aura-onnx"
+name = "tpt-aura-onnx"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,11 +7,11 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 description = "ONNX inference backends (YOLOv8/SAM/CLIP) that populate the AURA Semantic DAG."
-keywords.workspace = true
-categories.workspace = true
+keywords = ["onnx", "inference", "object-detection", "semantic", "neural-networks"]
+categories = ["multimedia", "science", "computer-vision"]
 
 [dependencies]
-libaura = { path = "../libaura" }
+tpt-aura = { path = "../tpt-aura" }
 
 [dependencies.ort]
 version = "2.0.0-rc.13"

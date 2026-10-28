@@ -14,7 +14,7 @@ jobs:
     name: Verify before publish
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -30,7 +30,7 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Publish tpt-aura
         run: cargo publish -p tpt-aura --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
@@ -49,7 +49,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
